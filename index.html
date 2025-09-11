@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Caracol protegido (cookies 3P + anti-clics)</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; background:#0b0f17; color:#e9eef5; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; }
+  header { display:flex; gap:.75rem; align-items:center; justify-content:space-between; padding:12px 16px; background:#111826; border-bottom:1px solid #233044; }
+  h1 { font-size:16px; margin:0; font-weight:700; }
+  .row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+  button, .btn {
+    background:#1f2b3d; color:#e9eef5; border:1px solid #2b3a52; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; text-decoration:none;
+  }
+  button:hover, .btn:hover { background:#2a3a55; }
+  .ok { background:#1f3d2b; border-color:#245c3c; } .ok:hover { background:#245c3c; }
+  .danger { background:#742a2a; border-color:#9b2c2c; } .danger:hover { background:#9b2c2c; }
+  .muted { opacity:.85; }
+  .badge { padding:4px 8px; border-radius:999px; background:#1f2b3d; border:1px solid #2b3a52; font-size:12px; }
+  .wrap { position:relative; width:100%; height:calc(100vh - 210px); }
+  iframe { width:100%; height:100%; border:0; background:#000; }
+  .shield {
+    position:absolute; inset:0; display:grid; place-items:center;
+    background:rgba(9,13,23,.55); backdrop-filter:blur(2px);
+  }
+  .panel { padding:14px 16px; border-radius:12px; background:#0f1725; border:1px solid #233044; text-align:center; max-width:520px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  .panel h2 { margin:0 0 8px; font-size:18px; }
+  .panel p { margin:6px 0 12px; color:#c8d2e1; }
+  .small { font-size:12px; }
+  .count { font-variant-numeric: tabular-nums; }
+  .tools { padding:10px 16px; background:#0f1624; border-bottom:1px solid #233044; display:flex; gap:1rem; flex-wrap:wrap; }
+  .cookieHelp {
+    padding:12px 16px; background:#122035; border-top:1px solid #233044; border-bottom:1px solid #233044; line-height:1.4;
+  }
+  .cookieHelp ol { margin:8px 0 0 18px; }
+  .cookieHelp strong { color:#cfe2ff; }
+  footer { padding:8px 16px; opacity:.65; font-size:12px; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="row">
+      <h1>Caracol en vivo — protegido</h1>
+      <span class="badge">Modo: <strong id="mode">Bloqueado</strong></span>
+    </div>
+    <div class="row">
+      <button id="btnLock" class="danger">Bloquear</button>
+      <button id="btnUnlock" class="ok">Desbloquear</button>
+      <a id="openTop" class="btn" target="_blank" rel="noopener">🗗 Abrir en ventana (top-level)</a>
+      <span class="small muted">Atajos: Enter = desbloquear · B = bloquear</span>
+    </div>
+  </header>
+
+  <div class="tools">
+    <div class="small muted">
+      Si el canal se corta con “level load timeout”, permite <strong>cookies de terceros</strong> para este sitio o ábrelo en una ventana propia.
+    </div>
+  </div>
+
+  <div class="cookieHelp">
+    <div><strong>Permitir cookies de terceros (Chrome):</strong></div>
+    <ol class="small">
+      <li>Haz clic en el icono de <strong>ojito/galleta</strong> a la derecha de la barra de direcciones.</li>
+      <li>Elige <strong>“Permitir cookies de terceros en este sitio”</strong> y recarga.</li>
+    </ol>
+    <div class="small muted" style="margin-top:6px;">
+      En Firefox/Brave: agrega excepción para <code>tvporinternet2.com</code> o usa el botón “Abrir en ventana (top-level)”.
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- IFRAME con Referer y acceso a storage (para cookies 3P via Storage Access API) -->
+    <iframe id="player"
+      src="https://www.tvporinternet2.com/caracol-en-vivo-por-internet.html"
+      allow="storage-access; autoplay; fullscreen; picture-in-picture"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
+    </iframe>
+
+    <!-- ESCUDO anti-clics/teclas -->
+    <div id="shield" class="shield" aria-hidden="true">
+      <div class="panel">
+        <h2>Protegiendo la carga del reproductor</h2>
+        <p class="muted">Bloqueamos clics/teclas para evitar redirecciones mientras carga.</p>
+        <p class="small">Se desbloquea en <span class="count" id="count">8</span>s o usa los botones.</p>
+        <div class="row" style="justify-content:center;">
+          <button id="unlockNow" class="ok">Desbloquear ahora</button>
+          <button id="keepLocked" class="danger">Seguir bloqueado</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>El iframe envía el <code>Referer</code> y permite <code>storage-access</code> para reducir cortes por cookies 3P. El sandbox bloquea popups.</footer>
+
+<script>
+/** ======= CONFIG ======= **/
+let AUTO_UNLOCK_SECONDS = 8;
+
+/** ======= ELEMENTOS ======= **/
+const shield     = document.getElementById('shield');
+const countEl    = document.getElementById('count');
+const btnLock    = document.getElementById('btnLock');
+const btnUnlock  = document.getElementById('btnUnlock');
+const unlockNow  = document.getElementById('unlockNow');
+const keepLocked = document.getElementById('keepLocked');
+const modeEl     = document.getElementById('mode');
+const openTop    = document.getElementById('openTop');
+const iframe     = document.getElementById('player');
+
+/** ======= ESTADO ======= **/
+let locked = true;
+let timer  = null;
+let seconds = AUTO_UNLOCK_SECONDS;
+
+function setLocked(on) {
+  locked = on;
+  shield.style.display = on ? 'grid' : 'none';
+  modeEl.textContent = on ? 'Bloqueado' : 'Desbloqueado';
+  if (on) window.focus();
+}
+
+function startCountdown() {
+  seconds = AUTO_UNLOCK_SECONDS;
+  countEl.textContent = seconds;
+  clearInterval(timer);
+  timer = setInterval(() => {
+    seconds -= 1;
+    countEl.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(timer);
+      setLocked(false);
+    }
+  }, 1000);
+}
+
+// Botones
+btnLock.addEventListener('click', () => { clearInterval(timer); setLocked(true); startCountdown(); });
+btnUnlock.addEventListener('click', () => { clearInterval(timer); setLocked(false); });
+unlockNow.addEventListener('click', () => { clearInterval(timer); setLocked(false); });
+keepLocked.addEventListener('click', () => { clearInterval(timer); startCountdown(); });
+
+// Abrir en ventana (top-level)
+openTop.href = iframe.src;
+
+// Teclas globales: Enter desbloquea · B bloquea
+['keydown','keypress','keyup'].forEach(type => {
+  document.addEventListener(type, e => {
+    if (type === 'keydown') {
+      if (e.key.toLowerCase?.() === 'b') { e.preventDefault(); setLocked(true); startCountdown(); return; }
+      if (e.key === 'Enter') { e.preventDefault(); setLocked(false); return; }
+    }
+    if (locked) { e.preventDefault(); e.stopPropagation(); return false; }
+  }, true);
+});
+
+// Observador opcional de cambios de src (por si cambias de canal más adelante)
+new MutationObserver(() => { openTop.href = iframe.src; })
+  .observe(iframe, { attributes: true, attributeFilter: ['src'] });
+
+// Arranque
+setLocked(true);
+startCountdown();
+</script>
+</body>
+</html>
