@@ -3,164 +3,517 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Caracol protegido (cookies 3P + anti-clics)</title>
+<title>Mi TV Station + Anti‑Clics (Fusion)</title>
 <style>
   :root { color-scheme: dark; }
   body { margin:0; background:#0b0f17; color:#e9eef5; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; }
-  header { display:flex; gap:.75rem; align-items:center; justify-content:space-between; padding:12px 16px; background:#111826; border-bottom:1px solid #233044; }
-  h1 { font-size:16px; margin:0; font-weight:700; }
-  .row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
-  button, .btn {
-    background:#1f2b3d; color:#e9eef5; border:1px solid #2b3a52; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; text-decoration:none;
-  }
+  header { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:12px 16px; background:#111826; border-bottom:1px solid #233044; }
+  h1 { margin:0; font-size:18px; font-weight:800; }
+  .row { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+  .layout { display:grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 64px); }
+  aside { border-right:1px solid #233044; padding:12px; background:#0f1624; }
+  main { position:relative; padding:12px; }
+  input, select, button, .btn, textarea { background:#1f2b3d; color:#e9eef5; border:1px solid #2b3a52; padding:8px 10px; border-radius:8px; }
+  button, .btn { cursor:pointer; font-weight:600; text-decoration:none; }
   button:hover, .btn:hover { background:#2a3a55; }
   .ok { background:#1f3d2b; border-color:#245c3c; } .ok:hover { background:#245c3c; }
   .danger { background:#742a2a; border-color:#9b2c2c; } .danger:hover { background:#9b2c2c; }
   .muted { opacity:.85; }
   .badge { padding:4px 8px; border-radius:999px; background:#1f2b3d; border:1px solid #2b3a52; font-size:12px; }
-  .wrap { position:relative; width:100%; height:calc(100vh - 210px); }
-  iframe { width:100%; height:100%; border:0; background:#000; }
-  .shield {
-    position:absolute; inset:0; display:grid; place-items:center;
-    background:rgba(9,13,23,.55); backdrop-filter:blur(2px);
-  }
+  .stack { position:relative; width:100%; height: calc(100vh - 220px); background:#000; border-radius:10px; overflow:hidden; border:1px solid #233044; }
+  video, iframe { width:100%; height:100%; border:0; display:block; background:#000; }
+  .list { display:grid; grid-template-columns: 1fr; gap:6px; margin-top:10px; max-height: 45vh; overflow:auto; }
+  .item { display:flex; align-items:center; gap:.6rem; padding:6px 8px; background:#101b2e; border:1px solid #233044; border-radius:8px; cursor:pointer; }
+  .item:hover { background:#15233a; }
+  .logo { width:36px; height:36px; border-radius:6px; object-fit:cover; background:#0d1322; }
+  .title { flex:1; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tag { font-size:11px; padding:2px 6px; border-radius:999px; border:1px solid #2b3a52; }
+  .toolbar { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:10px; }
+  .tabs { display:flex; gap:6px; margin:10px 0; }
+  .tab { padding:8px 10px; border-radius:8px; border:1px solid #2b3a52; background:#1f2b3d; cursor:pointer; }
+  .tab.active { background:#245c3c; border-color:#2ea36a; }
+  .wrapProtected { position:relative; width:100%; height:100%; }
+  .shield { position:absolute; inset:0; display:grid; place-items:center; background:rgba(9,13,23,.55); backdrop-filter:blur(2px); }
   .panel { padding:14px 16px; border-radius:12px; background:#0f1725; border:1px solid #233044; text-align:center; max-width:520px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
-  .panel h2 { margin:0 0 8px; font-size:18px; }
-  .panel p { margin:6px 0 12px; color:#c8d2e1; }
   .small { font-size:12px; }
   .count { font-variant-numeric: tabular-nums; }
-  .tools { padding:10px 16px; background:#0f1624; border-bottom:1px solid #233044; display:flex; gap:1rem; flex-wrap:wrap; }
-  .cookieHelp {
-    padding:12px 16px; background:#122035; border-top:1px solid #233044; border-bottom:1px solid #233044; line-height:1.4;
-  }
-  .cookieHelp ol { margin:8px 0 0 18px; }
-  .cookieHelp strong { color:#cfe2ff; }
-  footer { padding:8px 16px; opacity:.65; font-size:12px; }
+  .twoCol { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .hidden { display:none !important; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .chip { padding:4px 8px; border-radius:999px; border:1px solid #2b3a52; background:#1f2b3d; font-size:12px; cursor:pointer; }
+  .chip:hover { background:#2a3a55; }
 </style>
 </head>
 <body>
   <header>
     <div class="row">
-      <h1>Caracol en vivo — protegido</h1>
-      <span class="badge">Modo: <strong id="mode">Bloqueado</strong></span>
+      <h1>Mi TV Station + Anti‑Clics (Fusion)</h1>
+      <span class="badge" id="modeBadge">Modo: <strong id="mode">Bloqueado</strong></span>
     </div>
     <div class="row">
+      <a id="openTop" class="btn" target="_blank" rel="noopener">🗗 Abrir canal en ventana</a>
       <button id="btnLock" class="danger">Bloquear</button>
       <button id="btnUnlock" class="ok">Desbloquear</button>
-      <a id="openTop" class="btn" target="_blank" rel="noopener">🗗 Abrir en ventana (top-level)</a>
-      <span class="small muted">Atajos: Enter = desbloquear · B = bloquear</span>
+      <span class="small muted">Atajos: ⬆️/⬇️ navega lista · Enter desbloquea · B bloquea</span>
     </div>
   </header>
 
-  <div class="tools">
-    <div class="small muted">
-      Si el canal se corta con “level load timeout”, permite <strong>cookies de terceros</strong> para este sitio o ábrelo en una ventana propia.
-    </div>
-  </div>
+  <div class="layout">
+    <aside>
+      <div class="row">
+        <input id="search" class="grow" type="text" placeholder="🔎 Buscar canal..." />
+      </div>
 
-  <div class="cookieHelp">
-    <div><strong>Permitir cookies de terceros (Chrome):</strong></div>
-    <ol class="small">
-      <li>Haz clic en el icono de <strong>ojito/galleta</strong> a la derecha de la barra de direcciones.</li>
-      <li>Elige <strong>“Permitir cookies de terceros en este sitio”</strong> y recarga.</li>
-    </ol>
-    <div class="small muted" style="margin-top:6px;">
-      En Firefox/Brave: agrega excepción para <code>tvporinternet2.com</code> o usa el botón “Abrir en ventana (top-level)”.
-    </div>
-  </div>
+      <!-- Presets -->
+      <div class="toolbar" style="margin-top:10px;">
+        <select id="presetSelect" title="Listados predeterminados">
+          <option value="">— Cargar listado predeterminado —</option>
+          <option value="tvporinternet2">tvporinternet2 (Julian)</option>
+          <option value="update2.m3u">update2.m3u</option>
+          <option value="xumo.m3u">xumo.m3u</option>
+          <option value="xiaomi.m3u">xiaomi.m3u</option>
+          <option value="localnow.m3u">localnow.m3u</option>
+        </select>
+        <button id="btnLoadPreset" class="ok">Cargar</button>
+      </div>
 
-  <div class="wrap">
-    <!-- IFRAME con Referer y acceso a storage (para cookies 3P via Storage Access API) -->
-    <iframe id="player"
-      src="https://www.tvporinternet2.com/caracol-en-vivo-por-internet.html"
-      allow="storage-access; autoplay; fullscreen; picture-in-picture"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
-    </iframe>
+      <!-- Importar archivos -->
+      <div class="toolbar">
+        <input type="file" id="fileInput" accept=".m3u,.m3u8,.json" />
+        <button id="btnClearList" class="danger">Limpiar listado</button>
+      </div>
 
-    <!-- ESCUDO anti-clics/teclas -->
-    <div id="shield" class="shield" aria-hidden="true">
-      <div class="panel">
-        <h2>Protegiendo la carga del reproductor</h2>
-        <p class="muted">Bloqueamos clics/teclas para evitar redirecciones mientras carga.</p>
-        <p class="small">Se desbloquea en <span class="count" id="count">8</span>s o usa los botones.</p>
-        <div class="row" style="justify-content:center;">
-          <button id="unlockNow" class="ok">Desbloquear ahora</button>
-          <button id="keepLocked" class="danger">Seguir bloqueado</button>
+      <!-- Chips de categorías dinámicas -->
+      <div id="chips" class="chips"></div>
+
+      <!-- Listado de canales -->
+      <div id="list" class="list" tabindex="0" aria-label="Listado de canales"></div>
+
+      <!-- Favoritos -->
+      <div class="toolbar">
+        <button id="btnAddFav">⭐ Agregar a Favoritos</button>
+        <select id="favSelect" title="Favoritos" style="flex:1 1 auto; min-width:180px;"></select>
+        <button id="btnPlayFav" class="ok">▶</button>
+        <button id="btnDelFav" class="danger">🗑️</button>
+      </div>
+    </aside>
+
+    <main>
+      <div class="tabs">
+        <button class="tab active" id="tabNormal">Player normal</button>
+        <button class="tab" id="tabProtected">Player protegido (anti‑clics)</button>
+      </div>
+
+      <div id="playerNormal" class="stack">
+        <video id="video" controls playsinline></video>
+        <iframe id="iframeNormal" class="hidden"></iframe>
+      </div>
+
+      <div id="playerProtected" class="stack hidden">
+        <div class="wrapProtected" style="width:100%;height:100%;">
+          <iframe id="iframeProtected"
+            allow="storage-access; autoplay; fullscreen; picture-in-picture"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"></iframe>
+
+          <div id="shield" class="shield" aria-hidden="true">
+            <div class="panel">
+              <h3 style="margin:0 0 6px;">Protegiendo la carga del reproductor</h3>
+              <p class="small muted">Bloqueamos clics/teclas para evitar redirecciones mientras carga.</p>
+              <p class="small">Se desbloquea en <span class="count" id="count">8</span>s o usa los botones.</p>
+              <div class="row" style="justify-content:center; margin-top:8px;">
+                <button id="unlockNow" class="ok">Desbloquear ahora</button>
+                <button id="keepLocked" class="danger">Seguir bloqueado</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      <div class="toolbar">
+        <label class="small">Auto‑desbloqueo: <input id="unlockSeconds" type="number" min="0" step="1" value="8" style="width:72px;"></label>
+        <button id="btnApply">Aplicar</button>
+        <span class="small muted">Si un canal es una página (p.ej. tvporinternet2.com), usa el Player protegido para evitar popups y permitir cookies 3P.</span>
+      </div>
+    </main>
   </div>
 
-  <footer>El iframe envía el <code>Referer</code> y permite <code>storage-access</code> para reducir cortes por cookies 3P. El sandbox bloquea popups.</footer>
+  <footer style="padding:10px 16px; opacity:.65; font-size:12px; border-top:1px solid #233044;">Mi TV Station Fusion · Soporte M3U/JSON · HLS.js cuando aplique · Player protegido con anti‑clics/cookies 3P.</footer>
 
-<script>
-/** ======= CONFIG ======= **/
-let AUTO_UNLOCK_SECONDS = 8;
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+  const STORAGE_FAVS = 'mtv:favs';
+  const STORAGE_LAST = 'mtv:last';
 
-/** ======= ELEMENTOS ======= **/
-const shield     = document.getElementById('shield');
-const countEl    = document.getElementById('count');
-const btnLock    = document.getElementById('btnLock');
-const btnUnlock  = document.getElementById('btnUnlock');
-const unlockNow  = document.getElementById('unlockNow');
-const keepLocked = document.getElementById('keepLocked');
-const modeEl     = document.getElementById('mode');
-const openTop    = document.getElementById('openTop');
-const iframe     = document.getElementById('player');
+  let channels = []; // {name, url, logo?, group?}
+  let filtered = [];
+  let selectedIndex = -1;
+  let favs = [];
 
-/** ======= ESTADO ======= **/
-let locked = true;
-let timer  = null;
-let seconds = AUTO_UNLOCK_SECONDS;
+  // Tabs & Modo
+  const tabNormal = document.getElementById('tabNormal');
+  const tabProtected = document.getElementById('tabProtected');
+  const playerNormal = document.getElementById('playerNormal');
+  const playerProtected = document.getElementById('playerProtected');
 
-function setLocked(on) {
-  locked = on;
-  shield.style.display = on ? 'grid' : 'none';
-  modeEl.textContent = on ? 'Bloqueado' : 'Desbloqueado';
-  if (on) window.focus();
-}
+  // Normal player
+  const video = document.getElementById('video');
+  const iframeNormal = document.getElementById('iframeNormal');
+  let hls = null;
 
-function startCountdown() {
-  seconds = AUTO_UNLOCK_SECONDS;
-  countEl.textContent = seconds;
-  clearInterval(timer);
-  timer = setInterval(() => {
-    seconds -= 1;
-    countEl.textContent = seconds;
-    if (seconds <= 0) {
-      clearInterval(timer);
-      setLocked(false);
+  // Protected player
+  const iframeProtected = document.getElementById('iframeProtected');
+  const shield = document.getElementById('shield');
+  const countEl = document.getElementById('count');
+  const unlockNow = document.getElementById('unlockNow');
+  const keepLocked = document.getElementById('keepLocked');
+  const modeEl = document.getElementById('mode');
+  const openTop = document.getElementById('openTop');
+  const btnLock = document.getElementById('btnLock');
+  const btnUnlock = document.getElementById('btnUnlock');
+  const unlockSecondsEl = document.getElementById('unlockSeconds');
+  const btnApply = document.getElementById('btnApply');
+  let AUTO_UNLOCK_SECONDS = 8, locked = true, timer = null, seconds = 8;
+
+  // UI elements
+  const listEl = document.getElementById('list');
+  const searchEl = document.getElementById('search');
+  const chipsEl = document.getElementById('chips');
+  const presetSelect = document.getElementById('presetSelect');
+  const btnLoadPreset = document.getElementById('btnLoadPreset');
+  const fileInput = document.getElementById('fileInput');
+  const btnClearList = document.getElementById('btnClearList');
+
+  const btnAddFav = document.getElementById('btnAddFav');
+  const favSelect = document.getElementById('favSelect');
+  const btnPlayFav = document.getElementById('btnPlayFav');
+  const btnDelFav = document.getElementById('btnDelFav');
+
+  // Helpers: tipo de URL
+  function isM3U8(url){ return /\.m3u8(\?|$)/i.test(url); }
+  function isYouTube(url){ return /youtube\.com\/watch\?|youtu\.be\//i.test(url); }
+  function isWebPage(url){ return !isM3U8(url) && !/\.mp4(\?|$)/i.test(url) && !isYouTube(url); }
+
+  // ====== PRESET EN MEMORIA: tvporinternet2 (Julian) ======
+  const PRESET_TVPORINTERNET2 = [
+    "https://www.tvporinternet2.com/el-gourmet-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/distrito-comedia-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/comedy-central-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/extrema-tv-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/dpelicula-plus-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/canal-sony-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/golden-premier-2-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/golden-premier-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/golden-edge-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/golden-plus-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/golden-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/multipremier-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/panico-hd-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/studio-universal-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/amc-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/paramount-channel-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/axn-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/fx-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/cinecanal-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/warner-channel-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/usa-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/space-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/cinemax-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/star-channel-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/tnt-series-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/tnt-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/universal-cinema-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/universal-premiere-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/universal-channel-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/everything-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/nat-geo-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/animal-planet-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/history-2-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/history-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/discovery-aye-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/discovery-hyh-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/id-investigation-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/discovery-tlc-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/discovery-theater-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/discovery-world-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/discovery-channel-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/mtv-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/nick-junior-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/nick-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/cartoonito-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/discovery-kids-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/disney-junior-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/disney-channel-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/tnt-novelas-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/canal-5-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/azteca-uno-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/azteca-7-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/imagen-tv-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/unicable-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/atv-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/willax-tv-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/global-tv-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/america-tv-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/latina-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/rcn-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/caracol-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/ecuavisa-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/dw-espanol-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/antena-3-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/las-estrellas-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/tlnovelas-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/galavision-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/pasiones-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/univision-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/telemundo-internacional-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/telemundo-puerto-rico-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/telemundo-51-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/chilevision-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/television-publica-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/el-trece-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/telefe-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/mlb-network-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/win-sports-plus-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/win-sports-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/fox-sports-3-mexico-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/fox-sports-mexico-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/fox-sports-3-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/fox-sports-2-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/fox-sports-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-5-mexico-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-4-mexico-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-3-mexico-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-2-mexico-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-mexico-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-7-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-6-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-5-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-4-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-3-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-2-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/espn-premium-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/directv-sports-plus-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/directv-sports-2-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/directv-sports-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/bein-sports-xtra-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/dazn-la-liga-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/dazn-f1-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/movistar-liga-de-campeones-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/movistar-la-liga-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/tyc-sports-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/fox-sports-premium-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/tnt-sports-chile-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/tnt-sports-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/gol-peru-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/sky-sports-la-liga-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/vix-tudn-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/tudn-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/liga-1-max-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/liga-1-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/la-casa-de-los-famosos-mexico-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/azteca-deportes-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/fm-hot-movies-en-vivo-por-internet.html",
+    "https://www.tvporinternet2.com/fm-hot-kids-en-vivo-por-internet.html"
+  ];
+
+  function deriveNameFromUrl(u){
+    try{ const slug = new URL(u).pathname.split('/').filter(Boolean).pop().replace(/\.html?$/,'');
+      let name = slug.replace(/-/g,' ');
+      name = name.replace(/en vivo por internet|en vivo|por internet|hd|mexico|espanol/gi,'').replace(/\s+/g,' ').trim();
+      name = name.split(' ').map(w => w ? (w[0].toUpperCase()+w.slice(1)) : '').join(' ');
+      return name || u; } catch{ return u; }
+  }
+
+  /** ===================== PARSERS ===================== */
+  function parseM3U(text){
+    const lines = text.split(/\r?\n/);
+    const out = [];
+    let current = null;
+    for (let i=0;i<lines.length;i++){
+      const line = (lines[i]||'').trim();
+      if (!line) continue;
+      if (line.startsWith('#EXTINF')){
+        const nameMatch = line.split(',');
+        const name = (nameMatch[1]||'Canal').trim();
+        const attrs = {};
+        const re = /(\w[\w-]*)="(.*?)"/g; let m;
+        while((m = re.exec(line))){ attrs[m[1]] = m[2]; }
+        current = { name, url:'', logo: attrs['tvg-logo'] || attrs['logo'] || '' , group: attrs['group-title']||'' };
+      } else if (!line.startsWith('#')){
+        if (!current){ current = { name: line.split('/').pop(), logo:'', group:'' }; }
+        current.url = line.trim();
+        out.push(current); current = null;
+      }
     }
-  }, 1000);
-}
+    return out;
+  }
 
-// Botones
-btnLock.addEventListener('click', () => { clearInterval(timer); setLocked(true); startCountdown(); });
-btnUnlock.addEventListener('click', () => { clearInterval(timer); setLocked(false); });
-unlockNow.addEventListener('click', () => { clearInterval(timer); setLocked(false); });
-keepLocked.addEventListener('click', () => { clearInterval(timer); startCountdown(); });
+  async function loadPreset(name){
+    if (name === 'tvporinternet2') { mergeChannels(PRESET_TVPORINTERNET2); return; }
+    try {
+      const res = await fetch(name);
+      if (!res.ok) throw new Error('No se pudo cargar preset');
+      const text = await res.text();
+      let list = [];
+      if (/^\s*\{/.test(text) || /^\s*\[/.test(text)){
+        list = JSON.parse(text);
+      } else {
+        list = parseM3U(text);
+      }
+      mergeChannels(list);
+    } catch(e){ alert('Error cargando preset: '+e.message); }
+  }
 
-// Abrir en ventana (top-level)
-openTop.href = iframe.src;
-
-// Teclas globales: Enter desbloquea · B bloquea
-['keydown','keypress','keyup'].forEach(type => {
-  document.addEventListener(type, e => {
-    if (type === 'keydown') {
-      if (e.key.toLowerCase?.() === 'b') { e.preventDefault(); setLocked(true); startCountdown(); return; }
-      if (e.key === 'Enter') { e.preventDefault(); setLocked(false); return; }
+  function mergeChannels(list){
+    const seen = new Set(channels.map(c=>c.url));
+    for (let c of list){
+      if (!c) continue;
+      if (typeof c === 'string') c = { url: c };
+      if (!c.url) continue;
+      if (!c.name) c.name = deriveNameFromUrl(c.url);
+      if (!seen.has(c.url)){
+        channels.push({ name: c.name||'Canal', url:c.url, logo:c.logo||'', group:c.group||'' });
+        seen.add(c.url);
+      }
     }
-    if (locked) { e.preventDefault(); e.stopPropagation(); return false; }
-  }, true);
-});
+    buildCategories();
+    applyFilter();
+  }
 
-// Observador opcional de cambios de src (por si cambias de canal más adelante)
-new MutationObserver(() => { openTop.href = iframe.src; })
-  .observe(iframe, { attributes: true, attributeFilter: ['src'] });
+  /** ===================== CATEGORÍAS DINÁMICAS ===================== */
+  const chipsElRef = chipsEl;
+  function buildCategories(){
+    const groups = Array.from(new Set(channels.map(c=>c.group).filter(Boolean))).sort();
+    chipsElRef.innerHTML = '';
+    const allChip = document.createElement('div');
+    allChip.className='chip'; allChip.textContent='Todas';
+    allChip.onclick = ()=>{ searchEl.dataset.group=''; applyFilter(); };
+    chipsElRef.appendChild(allChip);
+    for (const g of groups){
+      const ch = document.createElement('div'); ch.className='chip'; ch.textContent=g;
+      ch.onclick = ()=>{ searchEl.dataset.group=g; applyFilter(); };
+      chipsElRef.appendChild(ch);
+    }
+  }
 
-// Arranque
-setLocked(true);
-startCountdown();
-</script>
+  /** ===================== RENDER LISTA ===================== */
+  function applyFilter(){
+    const q = (searchEl.value||'').toLowerCase().trim();
+    const g = searchEl.dataset.group||'';
+    filtered = channels.filter(c=>{
+      const byQ = !q || c.name.toLowerCase().includes(q);
+      const byG = !g || (c.group||'')===g;
+      return byQ && byG;
+    });
+    renderList();
+  }
+
+  function renderList(){
+    listEl.innerHTML='';
+    filtered.forEach((c, idx)=>{
+      const div = document.createElement('div');
+      div.className='item';
+      div.tabIndex=0;
+      div.dataset.index=idx;
+      const img = document.createElement('img'); img.className='logo'; img.alt='logo';
+      img.src = c.logo || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22%3E%3Crect width=%2236%22 height=%2236%22 fill=%22%230d1322%22/%3E%3C/svg%3E';
+      const name = document.createElement('div'); name.className='title'; name.textContent = c.name;
+      const tag = document.createElement('span'); tag.className='tag';
+      tag.textContent = isWebPage(c.url) ? 'WEB' : (isM3U8(c.url) ? 'HLS' : 'MP4/OTRO');
+      div.append(img, name, tag);
+      div.onclick = ()=> selectAndPlay(idx);
+      div.onkeydown = (e)=>{ if(e.key==='Enter') selectAndPlay(idx); };
+      listEl.appendChild(div);
+    });
+    selectedIndex = filtered.length ? Math.max(0, Math.min(selectedIndex, filtered.length-1)) : -1;
+  }
+
+  function selectAndPlay(idx){ selectedIndex = idx; const ch = filtered[idx]; if (!ch) return; playChannel(ch); }
+
+  /** ===================== PLAYER LOGIC ===================== */
+  function clearHls(){ if (hls){ try{ hls.destroy(); }catch{} hls = null; } }
+
+  function playChannel(ch){
+    localStorage.setItem(STORAGE_LAST, JSON.stringify(ch));
+    if (isWebPage(ch.url)){
+      setTab('protected'); setProtectedLocked(true); startCountdown();
+      iframeProtected.src = ch.url; openTop.href = ch.url;
+    } else if (isM3U8(ch.url)){
+      setTab('normal'); iframeNormal.classList.add('hidden'); video.classList.remove('hidden');
+      clearHls();
+      if (video.canPlayType('application/vnd.apple.mpegURL')){ video.src = ch.url; video.play().catch(()=>{}); }
+      else if (Hls.isSupported()){
+        hls = new Hls({
+          manifestLoadingTimeOut:30000, manifestLoadingMaxRetry:6, manifestLoadingRetryDelay:1000,
+          levelLoadingTimeOut:20000, levelLoadingMaxRetry:6, levelLoadingRetryDelay:1000,
+          fragLoadingTimeOut:20000, fragLoadingMaxRetry:6, fragLoadingRetryDelay:1000,
+          lowLatencyMode:true, liveSyncDurationCount:3, liveMaxLatencyDurationCount:6, maxLiveSyncPlaybackRate:1.2,
+          backBufferLength:30
+        });
+        hls.loadSource(ch.url); hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, ()=> video.play().catch(()=>{}));
+        hls.on(Hls.Events.ERROR, (ev, data)=>{
+          const { fatal, type, details } = data||{}; console.warn('[HLS]', type, details, data);
+          if (fatal){
+            if (type===Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
+            else if (type===Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+            else { clearHls(); playChannel(ch); }
+          } else if (details===Hls.ErrorDetails.LEVEL_LOAD_TIMEOUT || details===Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT){
+            setTimeout(()=> hls && hls.startLoad(), 1500);
+          }
+        });
+      } else { video.src = ch.url; video.play().catch(()=>{}); }
+      openTop.href = ch.url;
+    } else {
+      setTab('normal'); clearHls(); video.pause(); video.src='';
+      iframeNormal.classList.remove('hidden'); video.classList.add('hidden');
+      iframeNormal.src = ch.url; openTop.href = ch.url;
+    }
+  }
+
+  function setTab(which){
+    if (which==='protected'){
+      tabProtected.classList.add('active'); tabNormal.classList.remove('active');
+      playerProtected.classList.remove('hidden'); playerNormal.classList.add('hidden');
+    } else {
+      tabNormal.classList.add('active'); tabProtected.classList.remove('active');
+      playerNormal.classList.remove('hidden'); playerProtected.classList.add('hidden');
+    }
+  }
+
+  /** ===================== PROTECTED SHIELD ===================== */
+  function setProtectedLocked(on){ locked = on; shield.style.display = on ? 'grid' : 'none'; modeEl.textContent = on ? 'Bloqueado' : 'Desbloqueado'; if (on) window.focus(); }
+  function startCountdown(){ seconds = AUTO_UNLOCK_SECONDS; countEl.textContent = seconds; clearInterval(timer); timer = setInterval(()=>{ seconds -= 1; countEl.textContent = seconds; if (seconds<=0){ clearInterval(timer); setProtectedLocked(false); } }, 1000); }
+  btnLock.addEventListener('click', ()=>{ clearInterval(timer); setProtectedLocked(true); startCountdown(); });
+  btnUnlock.addEventListener('click', ()=>{ clearInterval(timer); setProtectedLocked(false); });
+  unlockNow.addEventListener('click', ()=>{ clearInterval(timer); setProtectedLocked(false); });
+  keepLocked.addEventListener('click', ()=>{ clearInterval(timer); startCountdown(); });
+  btnApply.addEventListener('click', ()=>{ AUTO_UNLOCK_SECONDS = Math.max(0, Number(unlockSecondsEl.value)||0); if (locked){ clearInterval(timer); startCountdown(); } });
+  ['keydown','keypress','keyup'].forEach(type=>{ document.addEventListener(type, e=>{ if (type==='keydown'){ if (e.key==='ArrowUp'){ e.preventDefault(); moveSelection(-1); return; } if (e.key==='ArrowDown'){ e.preventDefault(); moveSelection(1); return; } if (e.key.toLowerCase?.()==='b'){ e.preventDefault(); setProtectedLocked(true); startCountdown(); return; } if (e.key==='Enter'){ e.preventDefault(); setProtectedLocked(false); return; } } if (locked){ e.preventDefault(); e.stopPropagation(); return false; } }, true); });
+  new MutationObserver(()=>{ openTop.href = iframeProtected.src; }).observe(iframeProtected, { attributes:true, attributeFilter:['src'] });
+
+  /** ===================== FAVORITOS ===================== */
+  function loadFavs(){ try{ favs = JSON.parse(localStorage.getItem(STORAGE_FAVS)||'[]'); }catch{ favs=[]; } rebuildFavs(); }
+  function saveFavs(){ localStorage.setItem(STORAGE_FAVS, JSON.stringify(favs)); }
+  function rebuildFavs(){ favSelect.innerHTML=''; favs.forEach((f,i)=>{ const o=document.createElement('option'); o.value=String(i); o.textContent=f.name; favSelect.appendChild(o); }); }
+  function addFav(){ const ch = filtered[selectedIndex]; if(!ch) return; if(!favs.some(x=>x.url===ch.url)){ favs.push(ch); saveFavs(); rebuildFavs(); } }
+  function playFav(){ const f=favs[Number(favSelect.value)||0]; if(!f) return; playChannel(f); }
+  function delFav(){ const i=Number(favSelect.value); if(isNaN(i)) return; favs.splice(i,1); saveFavs(); rebuildFavs(); }
+  btnAddFav.addEventListener('click', addFav); btnPlayFav.addEventListener('click', playFav); btnDelFav.addEventListener('click', delFav);
+
+  /** ===================== NAVEGACIÓN LISTA ===================== */
+  function moveSelection(delta){ if (!filtered.length) return; selectedIndex = selectedIndex<0 ? 0 : selectedIndex + delta; selectedIndex = Math.max(0, Math.min(filtered.length-1, selectedIndex)); const el = listEl.querySelector(`.item[data-index="${selectedIndex}"]`); if (el){ el.scrollIntoView({block:'nearest'}); el.focus(); } }
+
+  /** ===================== CARGA DE ARCHIVOS / PRESETS ===================== */
+  btnLoadPreset.addEventListener('click', ()=>{ const v=presetSelect.value; if(v) loadPreset(v); });
+  fileInput.addEventListener('change', async (e)=>{ const f = e.target.files?.[0]; if(!f) return; const text = await f.text(); try{ if (/^\s*\{/.test(text) || /^\s*\[/.test(text)){ mergeChannels(JSON.parse(text)); } else { mergeChannels(parseM3U(text)); } }catch(err){ alert('Archivo inválido: '+err.message); } });
+  btnClearList.addEventListener('click', ()=>{ if(confirm('¿Vaciar listado actual?')){ channels=[]; filtered=[]; selectedIndex=-1; buildCategories(); renderList(); } });
+  searchEl.addEventListener('input', applyFilter);
+
+  /** ===================== RESTAURAR ÚLTIMO ===================== */
+  function restoreLast(){ try{ const last = JSON.parse(localStorage.getItem(STORAGE_LAST)||'null'); if(last && last.url){ channels.push(last); applyFilter(); const idx=filtered.findIndex(x=>x.url===last.url); if(idx>=0) selectAndPlay(idx); } }catch{} }
+
+  (function init(){ loadFavs(); buildCategories(); applyFilter(); })();
+  </script>
 </body>
 </html>
